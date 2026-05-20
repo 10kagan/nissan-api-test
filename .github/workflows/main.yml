@@ -1,0 +1,45 @@
+name: Daily Vehicle API Tests
+
+on:
+  schedule:
+    # UTC saatine göre 05:00, yerel saatine göre tam gece yarısı (00:00) çalışır.
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Bu satır, testleri istediğimiz zaman manuel başlatabilmemizi sağlar.
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Depoyu Klonla (Checkout)
+      uses: actions/checkout@v4
+
+    - name: 🐍 Python'u Kur
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: 📦 Kütüphaneleri Yükle
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: 🔐 Config Dosyasını Kasadan Oluştur
+      run: |
+        cat << EOF > config.py
+        BASE_URL = "https://admin.nnaconnected.com"
+        VIN = "${{ secrets.VIN }}"
+        AUTH_ENDPOINT = "/api/idm/api/client_token"
+        API_KEY = "${{ secrets.API_KEY }}"
+        APP_TYPE = "WEB_APP"
+        CLIENT_ID = "${{ secrets.CLIENT_ID }}"
+        CLIENT_SECRET = "${{ secrets.CLIENT_SECRET }}"
+        OEM_ID = "${{ secrets.OEM_ID }}"
+        ACCOUNT_ID = "${{ secrets.ACCOUNT_ID }}"
+        REMOTE_DOOR_ENDPOINT = f"/api/telematics/oem/{OEM_ID}/accounts/{ACCOUNT_ID}/remote-door"
+        REMOTE_ENGINE_ENDPOINT = f"/api/telematics/oem/{OEM_ID}/accounts/{ACCOUNT_ID}/remote-engine"
+        LOCATION_POST_ENDPOINT = f"/api/telematics/oem/{OEM_ID}/accounts/{ACCOUNT_ID}/location"
+        EOF
+
+    - name: 🚀 Otomasyonu Ateşle (Pytest)
+      run: python -m pytest -v -s test_vehicle.py
