@@ -19,7 +19,13 @@ def auth_headers():
     }
 
     response = requests.post(url, headers=headers, json=payload)
-
+        
+    # Eğer hata alırsak (200 dönmezse), çökmeden önce gerçek hatayı ekrana bas!
+    if response.status_code != 200:
+        print(f"\n--- TOKEN API HATASI ---")
+        print(f"Status: {response.status_code}")
+        print(f"Hata Detayı: {response.text}")
+            
     response.raise_for_status()
 
     print(f"\n---TOKEN API STATUS CODE: {response.status_code} ---")
